@@ -16,6 +16,17 @@ class KitchenModel:
     """ A class that represents a kitchen that can 
     """
     def __init__(self):
+        """Initializes a KitchenModel class with a kitchen, a cache for retreived chefs, and a list of acceptable cuisines
+        
+        Att The kitchen is initially empty, and the chef cache and time-to-live (TTL) caches are also initialized.
+        The TTL is set to 60 seconds by default, but this can be overridden by setting the TTL_SECONDS environment variable.
+
+        Attributes:
+            kitchen (List[int]): list of ids of chefs
+            _chefs_cache (dict[int, Chef]): A cache to store chefs
+            _ttl (dict[int, float]): A cache to store time-to-live for each chef in the cache
+            ttl_seconds (int): The time-to-live in seconds for the cached chef objects.
+        """
         self.kitchen: List[int] = []
         self._chefs_cache: dict[int, Chef] = []
         self._ttl: dict[int, float] = []
@@ -30,6 +41,17 @@ class KitchenModel:
                          'Cajun']
         
     def cookoff(self, cuisine: str):
+        """ Simulates the cookoff between chefs
+        
+        Computes each chefs cooking skill levels, retreives a random number and utilizes a 
+        CDF probability function to compute the winner of the cookoff.
+        
+        Returns: 
+            str: Name of winning cook
+            
+        Raises:
+            ValueError: If there are not enough chefs in the kitchen
+        """
         if len(self.kitchen) < 2: 
             logger.error("There must be at least two chefs to start a cookoff.")
             raise ValueError("There must be at least two chefs to start a cookoff.")
@@ -62,6 +84,9 @@ class KitchenModel:
         return winner
     
     def clear_kitchen(self):
+        """Clears the list of chefs.
+
+        """
         if not self.kitchen:
             logger.warning("Attempted to clear an empty kitchen.")
             return
@@ -69,6 +94,16 @@ class KitchenModel:
         self.kitchen.clear()
     
     def enter_kitchen(self, chef_id: int):
+        """Prepares a chef by adding them to the kitchen for an upcoming cookoff.
+
+        Args:
+            chef_id (int): The ID of the chef to enter the kitchen.
+
+        Raises:
+            ValueError: If the kitchen already has twenty chefs (kitchen is full).
+            ValueError: If the chef ID is invalid or the chef does not exist.
+
+        """
         if len(self.kitchen) > 20:
             logger.error(f"Attempted to add Chef {chef_id} but too many cooks in the kitchen")
             raise ValueError("Kitchen is full")
@@ -83,6 +118,12 @@ class KitchenModel:
 
         
     def get_chefs(self):
+        """Retrieves the current list of chefs in the kitchen.
+
+        Returns:
+            List[Chef]: A list of Chef dataclass instances representing the chefs in the kitchen.
+
+        """
         if not self.kitchen:
             logger.warning("Retreiving no chefs from an empty kitchen")
         else:
@@ -105,6 +146,15 @@ class KitchenModel:
         return chefs_present     
     
     def calculate_chef_skill(self, chef: Chef, cuisine: str) -> float:
+        """Calculates cooking skill for a chef based on arbitrary standards
+
+        Args:
+            chef (Chef): An instance of the Chef class
+            cuisine (str): Cooking skill within a cuisine
+
+        Returns:
+            float: The calculated cooking skill
+        """
         assert cuisine in self.cuisines
         logger.info(f"calculating skill level for chef: {chef.name} (ID {chef.id})")
         

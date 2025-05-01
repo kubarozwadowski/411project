@@ -15,6 +15,8 @@ def kitchen_model():
 # Fixtures providing sample chefs
 @pytest.fixture
 def sample_chef1(session):
+    """Fixture for a sample chef
+    """
     chef = Chef(
         name="Gordon Ramsay",
         specialty="Italian",
@@ -28,6 +30,8 @@ def sample_chef1(session):
 
 @pytest.fixture
 def sample_chef2(session):
+    """Fixture for a sample chef
+    """
     chef = Chef(
         name="Alvin Leung",
         specialty="Chinese",
@@ -41,6 +45,8 @@ def sample_chef2(session):
 
 @pytest.fixture
 def sample_chef3(session):
+    """Fixture for a sample chef
+    """
     chef = Chef(
         name="Aaron Sanchez",
         specialty= "Mexican",
@@ -54,6 +60,8 @@ def sample_chef3(session):
 
 @pytest.fixture
 def sample_chefs(sample_chef1, sample_chef2, sample_chef3):
+    """Fixture for a list with the sample chefs
+    """
     return [sample_chef1, sample_chef2, sample_chef3]
 
 ##########################################################
@@ -61,11 +69,15 @@ def sample_chefs(sample_chef1, sample_chef2, sample_chef3):
 ##########################################################
 
 def test_clear_kitchen(kitchen_model):
+    """ Tests that clear_kitchen leaves no objects within self.kitchen
+    """
     kitchen_model.kitchen = [1, 2, 3]
     kitchen_model.clear_kitchen()
     assert len(kitchen_model.kitchen) == 0, "Kitchen should be empty after calling clear_kitchen."
     
 def test_clear_kitchen_empty(kitchen_model, caplog):
+    """ Tests that clear_kitchen doesn't do anything when the kitchen is already empty
+    """
     with caplog.at_level("WARNING"):
         kitchen_model.clear_kitchen()
 
@@ -87,7 +99,7 @@ def test_get_chefs_empty(kitchen_model, caplog):
 def test_get_chefs_with_data(app, kitchen_model, sample_chefs):
     """Test that get_chefs returns the correct list when there are chefs.
 
-    # Note that app is a fixture defined in the conftest.py file
+    # Note app is a fixture defined in the conftest.py file
 
     """
     kitchen_model.kitchen.extend([chef.id for chef in sample_chefs])
@@ -96,6 +108,8 @@ def test_get_chefs_with_data(app, kitchen_model, sample_chefs):
     assert chefs == sample_chefs, "Expected get_chefs to return the correct chefs list."
 
 def test_get_chefs_uses_cache(kitchen_model, sample_chef1, mocker):
+    """ Tests that get_chefs accesses self._chefs_cache if the chef is in the cache
+    """
     kitchen_model.kitchen.append(sample_chef1.id)
 
     kitchen_model._chefs_cache[sample_chef1.id] = sample_chef1
@@ -109,6 +123,8 @@ def test_get_chefs_uses_cache(kitchen_model, sample_chef1, mocker):
     mock_get_by_id.assert_not_called()
 
 def test_get_chefs_refreshes_on_expired_ttl(kitchen_model, sample_chef1, mocker):
+    """ Tests that get_chefs refreshs on expired ttls
+    """
     kitchen_model.kitchen.append(sample_chef1.id)
 
     stale_chef = mocker.Mock()
@@ -124,6 +140,8 @@ def test_get_chefs_refreshes_on_expired_ttl(kitchen_model, sample_chef1, mocker)
     assert kitchen_model._chefs_cache[sample_chef1.id] == sample_chef1
 
 def test_cache_populated_on_get_chefs(kitchen_model, sample_chef1, mocker):
+    """ Tests that get_chef adds chefs to the cache
+    """
     mock_get_by_id = mocker.patch("models.kitchen_model.Chef.get_chef_by_id", return_value=sample_chef1)
 
     kitchen_model.kitchen.append(sample_chef1.id)
