@@ -42,7 +42,7 @@ fi
 # Run the Docker container with the necessary ports and volume mappings
 echo "Running Docker container..."
 docker run -p ${HOST_PORT}:${CONTAINER_PORT} -d --env-file .env \
-  -v boxing_volume:/app/db \
+  -v kitchen_volume:/app/db \
   --name ${IMAGE_NAME}_container $IMAGE_NAME:$CONTAINER_TAG
 
 echo "Docker container is running on port ${HOST_PORT}."
