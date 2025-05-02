@@ -4,7 +4,8 @@ import os
 import time
 from typing import List
 
-from chefs_kitchen.models.chef_model import Chef
+from chefs_kitchen.models.chef_model import Chef, create_chef, get_chef_by_id, get_chef_by_name, delete_chef, update_chef_stats, initialize_schema
+
 from chefs_kitchen.utils.logger import configure_logger
 from chefs_kitchen.utils.api_utils import get_random
 
@@ -28,8 +29,8 @@ class KitchenModel:
             ttl_seconds (int): The time-to-live in seconds for the cached chef objects.
         """
         self.kitchen: List[int] = []
-        self._chefs_cache: dict[int, Chef] = []
-        self._ttl: dict[int, float] = []
+        self._chefs_cache: dict[int, Chef] = {}
+        self._ttl: dict[int, float] = {}
         self.ttl_seconds = int(os.getenv("TTL", 60))
         self.cuisines = ['Italian', 
                          'Chinese', 
@@ -56,26 +57,31 @@ class KitchenModel:
             logger.error("There must be at least two chefs to start a cookoff.")
             raise ValueError("There must be at least two chefs to start a cookoff.")
 
-        skills_dict: dict[Chef, int] = []
-        chefs = self.get_chefs
+        skills_dict: dict[int, int] = {}
+        chefs = self.get_chefs()
         
         logger.info("Chefs retrieved. Let the cookoff begin.")
         total_skill = 0
         for c in chefs:
             skill = self.calculate_chef_skill(c, cuisine)
             total_skill += skill
-            skills_dict[c] = skill
+            skills_dict[c.id] = skill
             logger.info(f"Cooking skill for {c.name}: {skill:.3f}")
             
         r = get_random()
         logger.info(f"Random number retreived: {r:.3f}")
         progress = 0
         
-        for chef in skills_dict:
-            progress += skills_dict[chef] / total_skill
+        winner = None
+        for chef_id in skills_dict:
+            progress += skills_dict[chef_id] / total_skill
             if r < progress:
-                winner = chef
+                winner = get_chef_by_id(chef_id)
                 break
+        
+        if not winner:
+            winner_id = max(skills_dict, key=skills_dict.get)
+            winner = get_chef_by_id(winner_id)
             
         logger.info(f"Winner: {winner.name}")
         winner.update_chef_stats('win')
@@ -109,12 +115,13 @@ class KitchenModel:
             raise ValueError("Kitchen is full")
 
         try:
-            chef = Chef.get_chef_by_id(chef_id)
+            chef = get_chef_by_id(chef_id)
         except ValueError as e:
             logger.error(str(e))
             raise
         
         logger.info(f"Adding chef '{chef.name}' (ID {chef_id}) to the kitchen")
+        self.kitchen.append(chef_id)
 
         
     def get_chefs(self):
@@ -125,17 +132,18 @@ class KitchenModel:
 
         """
         if not self.kitchen:
-            logger.warning("Retreiving no chefs from an empty kitchen")
+            logger.warning("Retrieving chefs from an empty kitchen.")
+            return []
         else:
             logger.info(f"Retrieving {len(self.kitchen)} chefs from the kitchen")
             
-        chefs_present: List[str] = []
+        chefs_present: List[Chef] = []
         now = time.time()
         
         for chef_id in self.kitchen:
-            if chef_id not in self._chefs_cache.keys or self._ttl.get(chef, 0) <= now:
+            if chef_id not in self._chefs_cache or self._ttl.get(chef_id, 0) <= now:
                 logger.info(f"TTL expired or missing for chef {chef_id}. Refreshing from DB.")
-                chef = Chef.get_chef_by_id(chef_id)
+                chef = get_chef_by_id(chef_id)
                 self._chefs_cache[chef_id] = chef
                 self._ttl[chef_id] = now + self.ttl_seconds
             else:
