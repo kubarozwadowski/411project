@@ -5,14 +5,12 @@ import sqlite3
 
 from chefs_kitchen.utils.logger import configure_logger
 
-
 logger = logging.getLogger(__name__)
 configure_logger(logger)
 
 
 # load the db path from the environment with a default value
-DB_PATH = os.getenv("DB_PATH", "/app/sql/boxing.db")
-
+DB_PATH = os.getenv("DB_PATH", "/app/db/kitchen.db")
 
 def check_database_connection():
     try:
