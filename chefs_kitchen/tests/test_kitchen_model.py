@@ -14,7 +14,7 @@ def kitchen_model():
 
 # Fixtures providing sample chefs
 @pytest.fixture
-def sample_chef1(session):
+def sample_chef1():
     """Fixture for a sample chef
     """
     chef = Chef(
@@ -22,14 +22,13 @@ def sample_chef1(session):
         specialty="Italian",
         years_experience= 25,
         signature_dishes= 20,
-        age= 58
+        age= 58,
+        id=1
     )
-    session.add(chef)
-    session.commit()
     return chef
 
 @pytest.fixture
-def sample_chef2(session):
+def sample_chef2():
     """Fixture for a sample chef
     """
     chef = Chef(
@@ -37,14 +36,13 @@ def sample_chef2(session):
         specialty="Chinese",
         years_experience= 30,
         signature_dishes= 10,
-        age= 64
+        age= 64,
+        id=2
     )
-    session.add(chef)
-    session.commit()
     return chef
 
 @pytest.fixture
-def sample_chef3(session):
+def sample_chef3():
     """Fixture for a sample chef
     """
     chef = Chef(
@@ -52,10 +50,9 @@ def sample_chef3(session):
         specialty= "Mexican",
         years_experience= 20,
         signature_dishes= 4,
-        age= 49
+        age= 49,
+        id=2
     )
-    session.add(chef)
-    session.commit()
     return chef
 
 @pytest.fixture
@@ -115,7 +112,7 @@ def test_get_chefs_uses_cache(kitchen_model, sample_chef1, mocker):
     kitchen_model._chefs_cache[sample_chef1.id] = sample_chef1
     kitchen_model._ttl[sample_chef1.id] = time.time() + 100  # still valid
 
-    mock_get_by_id = mocker.patch("models.kitchen_model.Chef.get_chef_by_id")
+    mock_get_by_id = mocker.patch("chefs_kitchen.models.chef_model.get_chef_by_id")
 
     chefs = kitchen_model.get_chefs()
 
@@ -131,7 +128,7 @@ def test_get_chefs_refreshes_on_expired_ttl(kitchen_model, sample_chef1, mocker)
     kitchen_model._chefs_cache[sample_chef1.id] = stale_chef
     kitchen_model._ttl[sample_chef1.id] = time.time() - 1  # TTL expired
 
-    mock_get_by_id = mocker.patch("models.kitchen_model.Chef.get_chef_by_id", return_value=sample_chef1)
+    mock_get_by_id = mocker.patch("chefs_kitchen.models.chef_model.get_chef_by_id", return_value=sample_chef1)
 
     chefs = kitchen_model.get_chefs()
 
@@ -142,7 +139,7 @@ def test_get_chefs_refreshes_on_expired_ttl(kitchen_model, sample_chef1, mocker)
 def test_cache_populated_on_get_chefs(kitchen_model, sample_chef1, mocker):
     """ Tests that get_chef adds chefs to the cache
     """
-    mock_get_by_id = mocker.patch("models.kitchen_model.Chef.get_chef_by_id", return_value=sample_chef1)
+    mock_get_by_id = mocker.patch("chefs_kitchen.models.chef_model.get_chef_by_id", return_value=sample_chef1)
 
     kitchen_model.kitchen.append(sample_chef1.id)
 
@@ -176,7 +173,7 @@ def test_enter_kitchen_full(kitchen_model):
     with pytest.raises(ValueError, match="Kitchen is full"):
         kitchen_model.enter_kitchen(21)
 
-    assert len(kitchen_model.kitchen) == 20, "Kitchen should still contain only 2 chefs after trying to add a third."
+    assert len(kitchen_model.kitchen) == 20, "Kitchen should still contain only 20 chefs after trying to add a third."
 
 
 ##########################################################
@@ -189,13 +186,16 @@ def test_calculate_chef_skill(kitchen_model, sample_chefs):
 
     """
     expected_score_1 = (25 * 4) + (20 * 2) + 5 - 5 
-    assert kitchen_model.calculate_chef_skill(sample_chefs[0], "Italian") == expected_score_1, f"Expected score: {expected_score_1}, got {kitchen_model.calculate_chef_skill(sample_chef1, "Italian")}"
+    actual_score_1 = kitchen_model.calculate_chef_skill(sample_chefs[0], "Italian")
+    assert actual_score_1== expected_score_1, f"Expected score: {expected_score_1}, got {actual_score_1}"
 
     expected_score_2 = (30 * 4) + (10 * 2) - 5  
-    assert kitchen_model.calculate_chef_skill(sample_chefs[1], "Italian") == expected_score_2, f"Expected score: {expected_score_2}, got {kitchen_model.calculate_chef_skill(sample_chef2, "Italian")}"
+    actual_score_2 = kitchen_model.calculate_chef_skill(sample_chefs[1], "Italian")
+    assert actual_score_2 == expected_score_2, f"Expected score: {expected_score_2}, got {actual_score_2}"
 
-    expected_score_3 = (20 * 4) + (4 * 2) - 5
-    assert kitchen_model.calculate_chef_skill(sample_chefs[3], "Italian") == expected_score_3, f"Expected score: {expected_score_2}, got {kitchen_model.calculate_chef_skill(sample_chef3, "Italian")}"
+    expected_score_3 = (20 * 4) + (4 * 2) 
+    actual_score_3 = kitchen_model.calculate_chef_skill(sample_chefs[2], "Italian")
+    assert actual_score_3 == expected_score_3, f"Expected score: {expected_score_3}, got {actual_score_3}"
 
 def test_cookoff(kitchen_model, sample_chefs, caplog, mocker):
     """Test the cookoff method with sample chefs.
@@ -203,10 +203,10 @@ def test_cookoff(kitchen_model, sample_chefs, caplog, mocker):
     """
     kitchen_model.kitchen.extend(sample_chefs)
 
-    mocker.patch("models.kitchen_model.KitchenModel.calculate_chef_skill", side_effect=[2526.8, 2206.1])
-    mocker.patch("models.kitchen_model.get_random", return_value=0.42)
-    mocker.patch("models.kitchen_model.KitchenModel.get_chefs", return_value=sample_chefs)
-    mock_update_stats = mocker.patch("models.kitchen_model.Chef.update_stats")
+    mocker.patch("chefs_kitchen.models.kitchen_model.KitchenModel.calculate_chef_skill",side_effect=[140, 135, 88])
+    mocker.patch("chefs_kitchen.utils.api_utils.get_random", return_value=0.42)
+    mocker.patch("chefs_kitchen.models.kitchen_model.KitchenModel.get_chefs", return_value=sample_chefs)
+    mock_update_stats = mocker.patch("chefs_kitchen.models.chef_model.update_chef_stats")
 
     winner_name = kitchen_model.cookoff("Italian")
 
@@ -222,7 +222,7 @@ def test_cookoff_with_empty_kitchen(kitchen_model):
     """Test that the cookoff method raises a ValueError when there are fewer than two chefs.
 
     """
-    with pytest.raises(ValueError, match="There must be two chefs to start a cookoff."):
+    with pytest.raises(ValueError, match="There must be at least two chefs to start a cookoff."):
         kitchen_model.cookoff("Italian")
 
 def test_cookoff_with_one_chef(kitchen_model, sample_chef1):
@@ -231,7 +231,7 @@ def test_cookoff_with_one_chef(kitchen_model, sample_chef1):
     """
     kitchen_model.kitchen.append(sample_chef1)
 
-    with pytest.raises(ValueError, match="There must be two chefs to start a cookoff."):
+    with pytest.raises(ValueError, match="There must be at least two chefs to start a cookoff."):
         kitchen_model.cookoff("Italian")
 
 def test_clear_cache(kitchen_model, sample_chef1):
