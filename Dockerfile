@@ -17,13 +17,16 @@ COPY .env /app/.env
 RUN pip install -r requirements.txt
 
 # Install SQLite3
-RUN apt-get update && apt-get install -y sqlite3
+RUN apt-get update && apt-get install -y sqlite3 curl
 
 # Define a volume for persisting the database
 VOLUME ["/app/db"]
 
 # Make port 5000 available to the world outside this container
 EXPOSE 5000
+
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 CMD curl --fail http://localhost:5000/api/health || exit 1
 
 # Run the entrypoint script when the container launches
 CMD ["python", "app.py"]
