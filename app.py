@@ -50,7 +50,9 @@ def create_app(config_class=ProductionConfig) -> Flask:
 
     @app.route('/api/health', methods=['GET'])
     def healthcheck() -> Response:
-        return make_response()
+        return make_response(jsonify({
+            "status": "healthy"
+            }), 200)
     
     ##########################################################
     #
