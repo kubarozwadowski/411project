@@ -159,13 +159,13 @@ def test_enter_kitchen(kitchen_model, sample_chefs, app):
     """
     kitchen_model.enter_kitchen(sample_chefs[0].id)  # Assuming chef with ID 1 is "Muhammad Ali"
 
-    assert len(kitchen_model.kitchen) == 1, "Ring should contain one chef after calling enter_kitchen."
-    assert kitchen_model.kitchen[0] == 1, "Expected 'Muhammad Ali' (id 1) in the kitchen."
+    assert len(kitchen_model.kitchen) == 1, "Kitchen should contain one chef after calling enter_kitchen."
+    assert kitchen_model.kitchen[0] == 1, "Expected 'Gordan Ramsay' (id 1) in the kitchen."
 
     kitchen_model.enter_kitchen(sample_chefs[1].id)  # Assuming chef with ID 2 is "Mike Tyson"
 
-    assert len(kitchen_model.kitchen) == 2, "Ring should contain two chefs after calling enter_kitchen."
-    assert kitchen_model.kitchen[1] == 2, "Expected 'Mike Tyson' (id 2) in the kitchen."
+    assert len(kitchen_model.kitchen) == 2, "Kitchen should contain two chefs after calling enter_kitchen."
+    assert kitchen_model.kitchen[1] == 2, "Expected 'Alvin Leung' (id 2) in the kitchen."
 
 def test_enter_kitchen_full(kitchen_model):
     """Test that enter_kitchen raises an error when the kitchen is full.
@@ -173,10 +173,10 @@ def test_enter_kitchen_full(kitchen_model):
     """
     kitchen_model.kitchen = list(range(20))
 
-    with pytest.raises(ValueError, match="Ring is full"):
+    with pytest.raises(ValueError, match="Kitchen is full"):
         kitchen_model.enter_kitchen(21)
 
-    assert len(kitchen_model.kitchen) == 20, "Ring should still contain only 2 chefs after trying to add a third."
+    assert len(kitchen_model.kitchen) == 20, "Kitchen should still contain only 2 chefs after trying to add a third."
 
 
 ##########################################################
@@ -214,7 +214,7 @@ def test_cookoff(kitchen_model, sample_chefs, caplog, mocker):
 
     mock_update_stats.assert_any_call('win')  # chef_1 is the winner
 
-    assert len(kitchen_model.kitchen) == 0, "Ring should be empty after the cookoff."
+    assert len(kitchen_model.kitchen) == 0, "Kitchen should be empty after the cookoff."
 
     assert "The winner is: Gordon Ramsay" in caplog.text, "Expected winner log message not found."
 
